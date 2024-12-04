@@ -7,7 +7,8 @@ class Quadric(i : Int) : UniformProvider("""quadrics[${i}]""") {
   val surface by QuadraticMat4(unitSphere.clone())
   val clipper by QuadraticMat4(unitSlab.clone())
   val color by Vec3(0.5f, 0.5f, 0.5f)
-  var reflectance by Vec1(0.18f)
+  val reflectance by Vec1(0.18f)
+  val holeyness by Vec1(0f)
 
   fun translate(position: Vec3) {
     val translation = Mat4().translate(position)

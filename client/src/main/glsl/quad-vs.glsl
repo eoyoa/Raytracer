@@ -3,6 +3,8 @@ in vec4 vertexPosition;
 in vec4 vertexTexCoord;
 out vec4 texCoord;
 out vec4 rayDir;
+// procedural solid texturing
+out vec4 modelPosition;
 
 uniform struct {
   vec3 position;
@@ -14,4 +16,5 @@ void main(void) {
   gl_Position = vertexPosition;
   gl_Position.z = 0.99999;
   rayDir = vertexPosition * camera.rayDirMatrix;
+  modelPosition = vertexPosition;
 }

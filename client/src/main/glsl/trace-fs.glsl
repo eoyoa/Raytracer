@@ -3,6 +3,8 @@ precision highp float;
 
 out vec4 fragmentColor;
 in vec4 rayDir;
+// procedural solid texturing
+in vec4 modelPosition;
 
 uniform struct {
 	samplerCube envTexture;
@@ -22,8 +24,11 @@ uniform struct {
 
 	// reflectance for raytracing
 	float reflectance;
+
+	// procedural solid texturing
+	float holeyness;
 } quadrics[16];
-const int NUM_QUADRICS = 2;
+const int NUM_QUADRICS = 16;
 
 uniform struct {
 	vec4 position;
@@ -31,7 +36,26 @@ uniform struct {
 } lights[8];
 const int NUM_LIGHTS = 1;
 
-float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
+// procedural texturing
+float noise(vec3 r) {
+	uvec3 s = uvec3(
+	0x1D4E1D4E,
+	0x58F958F9,
+	0x129F129F);
+	float f = 0.0;
+	for(int i=0; i<16; i++) {
+		vec3 sf =
+		vec3(s & uvec3(0xFFFF))
+		/ 65536.0 - vec3(0.5, 0.5, 0.5);
+
+		f += sin(dot(sf, r));
+		s = s >> 1;
+	}
+	return f / 32.0 + 0.5;
+}
+// end of proc. texturing
+
+float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B, float holeyness) {
 	float a = dot(d * A, d);
 	float b = dot(d * A, e) + dot(e * A, d);
 	float c = dot(e * A, e);
@@ -48,12 +72,22 @@ float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
 	float t2 = (-b - D) / (2.0 * a);
 
 	vec4 hit1 = e + d * t1;
+	// throw out ray hit if should be hole
+	float w1 = fract(hit1.x + pow(noise(hit1.xyz * holeyness), 2.0)) * 3.0;
+	if (w1 < holeyness) {
+		t1 = -1.0;
+	}
 	if (dot(hit1 * B, hit1) < 0.0)
 	{
 		t1 = -1.0;
 	}
 
 	vec4 hit2 = e + d * t2;
+	// throw out ray hit if should be hole
+	float w2 = fract(hit2.x + pow(noise(hit2.xyz * holeyness), 2.0)) * 3.0;
+	if (w2 < holeyness) {
+		t2 = -1.0;
+	}
 	if (dot(hit2 * B, hit2) < 0.0)
 	{
 		t2 = -1.0;
@@ -71,7 +105,7 @@ bool findBestHit(vec4 e, vec4 d, out float bestT, out int bestIndex) {
 	// !! ensure i does not go out of quadrics range
 	for (int i = 0; i < NUM_QUADRICS; i++)
 	{
-		float tLocal = intersectClippedQuadric(e, d, quadrics[i].surface, quadrics[i].clipper);
+		float tLocal = intersectClippedQuadric(e, d, quadrics[i].surface, quadrics[i].clipper, quadrics[i].holeyness);
 		if (tLocal < bestT && tLocal > 0.0)
 		{
 			// new intersection's T is better than the best so far
@@ -137,7 +171,7 @@ void main(void) {
 	float w = 1.0;
 
 	// iterative ray tracing
-	for (int currBounce = 0; currBounce < 16 && w > 0.01; currBounce++) {
+	for (int currBounce = 0; currBounce < 4 && w > 0.01; currBounce++) {
 		// initialize best T and best index
 		float bestT = 10000.0;
 		int bestI = 0;

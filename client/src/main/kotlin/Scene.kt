@@ -6,6 +6,8 @@ import vision.gears.webglmath.Vec3
 import vision.gears.webglmath.Mat4
 import vision.gears.webglmath.Vec4
 import kotlin.js.Date
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Scene (
   val gl : WebGL2RenderingContext) : UniformProvider("scene") {
@@ -29,32 +31,59 @@ class Scene (
   val timeAtFirstFrame = Date().getTime()
   var timeAtLastFrame =  timeAtFirstFrame
 
-  val quadrics = Array(8) { Quadric(it) }
+  val fir = Array(2) { Quadric(it) }
+  init {
+    val leafColor = Vec3(0.004f,0.196f,0.125f)
+    fir[0].apply {
+      surface.apply {
+        set(Quadric.cone)
+      }
 
-  init{
-    for (quadric in quadrics) {
-      val random = Vec3();
-      random.randomize(Vec3(-9.0f, -9.0f, -9.0f), Vec3 (9.0f, 9.0f, 9.0f))
-      quadric.surface.set(Quadric.unitSphere)
-      quadric.surface.transform(Mat4().set().scale(3.0f, 3.0f, 3.0f).translate(random))
-      quadric.clipper.set(Quadric.unitSlab)
-      quadric.clipper.transform(Mat4().set().scale(1.0f, 0.5f, 1.0f))
+      clipper.apply {
+        set(Quadric.unitSlab)
+        transform(
+          Mat4()
+            .translate(0f, -1f)
+        )
+        negate()
+      }
 
-      // todo: just testing color
-      quadric.color.set(0f, 0f, 1f)
+      reflectance.set(0f)
 
-      // todo: testing reflectance
-      quadric.reflectance.set(0.5f)
+      color.set(leafColor)
+
+      holeyness.set(0.5f)
+    }
+
+    fir[1].apply {
+      surface.apply {
+        set(Quadric.cone)
+      }
+
+      clipper.apply {
+        set(Quadric.unitSlab)
+        transform(
+          Mat4()
+            .translate(0f, -1f)
+        )
+        negate()
+      }
+
+      reflectance.set(0f)
+
+      color.set(leafColor)
+
+      holeyness.set(0.25f)
+
+      translate(Vec3(0f, 1f))
     }
   }
 
   val lights = Array(1) { Light(it) }
   init {
     for (light in lights) {
-      val random = Vec3()
       light.position.set(Vec4(0.5f, 0.5f, 0.5f, 0f))
-      light.powerDensity.set(0.5f, 0.5f, 0.5f)
-
+      light.powerDensity.set(1f,1f,1f).normalize().timesAssign(1f)
     }
   }
 
@@ -69,11 +98,12 @@ class Scene (
   }
 
   fun update(gl : WebGL2RenderingContext, keysPressed : Set<String>) {
-
     val timeAtThisFrame = Date().getTime() 
     val dt = (timeAtThisFrame - timeAtLastFrame).toFloat() / 1000.0f
     val t  = (timeAtThisFrame - timeAtFirstFrame).toFloat() / 1000.0f    
     timeAtLastFrame = timeAtThisFrame
+
+    lights[0].position.set(1f, -0.5f, 0f, 0f)
 
     camera.move(dt, keysPressed)
 
@@ -82,7 +112,7 @@ class Scene (
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    traceMesh.draw(camera, *quadrics, *lights)
+    traceMesh.draw(camera, *fir, *lights)
 
   }
 }
