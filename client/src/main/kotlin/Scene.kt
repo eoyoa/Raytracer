@@ -7,6 +7,7 @@ import vision.gears.webglmath.Mat4
 import vision.gears.webglmath.Vec4
 import kotlin.js.Date
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -174,7 +175,7 @@ class Scene (
         color.set(1f,0.647f,0f)
         reflectance.set(0.09f)
         normalBumpFreq.set(0.1f)
-        translate(Vec3(3f, 0f, 3f))
+        translate(Vec3(3f, -0.75f, 3f))
       }
     }
     oranges[0].translate(Vec3(0f, 0.25f))
@@ -208,6 +209,16 @@ class Scene (
     timeAtLastFrame = timeAtThisFrame
 
     camera.move(dt, keysPressed)
+    // animations
+    for (firPart in fir) {
+      firPart.rotate(dt, Vec3(-0.01f, 1f, 0.01f).normalize())
+    }
+    for (snowmanPart in snowman) {
+      snowmanPart.translate(Vec3(0f, 0.0125f * sin(2*t)))
+    }
+    for (i in oranges.indices) {
+      oranges[i].translate(Vec3(0.0025f * sin((i + 1)*t), 0f, 0.0025f * cos((i + 1)*t)))
+    }
 
     // clear the screen
     gl.clearColor(0.3f, 0.0f, 0.3f, 1.0f)

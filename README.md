@@ -6,3 +6,4 @@
 - Snowman
 - Wooden floor
 - Pile of oranges
+- Animation
