@@ -50,22 +50,33 @@ float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
 	return (t1<0.0)?t2:((t2<0.0)?t1:min(t1, t2));
 }
 
+// takes ray e and d
+bool findBestHit(vec4 e, vec4 d, out float bestT, out int bestIndex) {
+	// maintains best hit's bestT and quadric index bestIndex
+	bestT = 10000.0;
+	bestIndex = 0;
+
+	// !! ensure i does not go out of quadrics range
+	for (int i = 0; i < 16; i++)
+	{
+		float tLocal = intersectClippedQuadric(e, d, quadrics[i].surface, quadrics[i].clipper);
+		if (tLocal < bestT && tLocal > 0.0)
+		{
+			// new intersection's T is better than the best so far
+			// so update bestT and bestIndex
+			bestT = tLocal;
+			bestIndex = i;
+		}
+	}
+
+	return bestT > 0.0 && bestT < 10000.0;
+}
+
 void main(void) {
 	vec4 e = vec4(camera.position, 1);
 	vec4 d = vec4(normalize(rayDir.xyz), 0);
 
-	//mat4 A = mat4 // X2 + Z2 -9 = 0
-	//(	1, 0, 0, 0,
-	//	0, 0, 0, 0,
-	//	0, 0, 1, 0,
-	//	0, 0, 0, -9	);
-
-	//mat4 B = mat4 // Y2 -9 = 0
-	//(	0, 0, 0, 0,
-	//	0, 1, 0, 0,
-	//	0, 0, 0, 0,
-	//	0, 0, 0, -9	);
-
+	// find best hit or return false if no best hit
 	bool validHit = true;
 	int killer = 16;
 
@@ -75,17 +86,9 @@ void main(void) {
 	while (validHit && killer >0)
 	{
 		killer--;
-		for (int i = 0; i < 16; i++)
-		{
-			float tLocal = intersectClippedQuadric(e, d, quadrics[i].surface, quadrics[i].clipper);
-			if (tLocal < bestT && tLocal > 0.0)
-			{
-				bestT = tLocal;
-				bestI = i;
-			}
-		}
+		bool isValidHit = findBestHit(e, d, bestT, bestI);
 
-		if (bestT > 0.0 && bestT < 10000.0) {
+		if (isValidHit) {
 			float t = bestT;
 			mat4 A = quadrics[bestI].surface;
 			vec4 hit = e + d * t;
