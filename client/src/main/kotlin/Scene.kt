@@ -29,32 +29,31 @@ class Scene (
   val timeAtFirstFrame = Date().getTime()
   var timeAtLastFrame =  timeAtFirstFrame
 
-  val quadrics = Array(16) { Quadric(it) }
+  val quadrics = Array(8) { Quadric(it) }
 
   init{
-    for (i in 0..15) {
+    for (quadric in quadrics) {
       val random = Vec3();
       random.randomize(Vec3(-9.0f, -9.0f, -9.0f), Vec3 (9.0f, 9.0f, 9.0f))
-      quadrics[i].surface.set(Quadric.unitSphere)
-      quadrics[i].surface.transform(Mat4().set().scale(3.0f, 3.0f, 3.0f).translate(random))
-      quadrics[i].clipper.set(Quadric.unitSlab)
-      quadrics[i].clipper.transform(Mat4().set().scale(1.0f, 0.5f, 1.0f))
+      quadric.surface.set(Quadric.unitSphere)
+      quadric.surface.transform(Mat4().set().scale(3.0f, 3.0f, 3.0f).translate(random))
+      quadric.clipper.set(Quadric.unitSlab)
+      quadric.clipper.transform(Mat4().set().scale(1.0f, 0.5f, 1.0f))
 
       // todo: just testing color
-      quadrics[i].color.set(0.3f, 0.6f, 1f)
+      quadric.color.set(0f, 0f, 1f)
 
       // todo: testing reflectance
-//      quadrics[i].reflectance.set(1.0f)
+      quadric.reflectance.set(0.5f)
     }
   }
 
-  val lights = Array(3) { Light(it) }
+  val lights = Array(1) { Light(it) }
   init {
     for (light in lights) {
       val random = Vec3()
-      random.randomize(Vec3(-9.0f, -9.0f, -9.0f), Vec3 (9.0f, 9.0f, 9.0f))
-      light.position.set(Vec4(random, 1f))
-      light.powerDensity.set(5f, 5f, 5f)
+      light.position.set(Vec4(0.5f, 0.5f, 0.5f, 0f))
+      light.powerDensity.set(0.5f, 0.5f, 0.5f)
 
     }
   }

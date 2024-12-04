@@ -23,44 +23,13 @@ uniform struct {
 	// reflectance for raytracing
 	float reflectance;
 } quadrics[16];
+const int NUM_QUADRICS = 8;
 
-// shading
 uniform struct {
 	vec4 position;
 	vec3 powerDensity;
 } lights[8];
-
-vec3 doShade(
-	vec3 normal, vec3 lightDir,
-	vec3 powerDensity, vec3 materialColor) {
-
-	float cosa = clamp(dot(lightDir, normal), 0.0, 1.0);
-
-	return powerDensity * materialColor * cosa + powerDensity;
-}
-
-vec3 shadeDiffuse(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
-	vec3 outputColor = vec3(0.0, 0.0, 0.0);
-
-	// to handle both sides of surface, flip normal towards incoming ray
-	if ( dot(normal, d.xyz) > 0.0 ) normal = -normal;
-
-	// !! ensure i does not go out of lights range
-	for (int i = 0; i < 3; i++) {
-		vec3 lightDiff = lights[i].position.xyz - worldPosition.xyz * lights[i].position.w;
-		vec3 lightDir = normalize (lightDiff); // lights[i].position.xyz
-		float distanceSquared = dot(lightDiff, lightDiff);
-		if (lights[i].position.w < 1.0) {
-			distanceSquared = 1.0;
-		}
-		vec3 powerDensity = lights[i].powerDensity / distanceSquared; //lights[i].powerDensity
-
-		outputColor += doShade(normal, lightDir, powerDensity, quadrics[qI].color);
-	}
-
-	return outputColor;
-}
-// end of shading
+const int NUM_LIGHTS = 1;
 
 float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
 	float a = dot(d * A, d);
@@ -100,7 +69,7 @@ bool findBestHit(vec4 e, vec4 d, out float bestT, out int bestIndex) {
 	bestIndex = 0;
 
 	// !! ensure i does not go out of quadrics range
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < NUM_QUADRICS; i++)
 	{
 		float tLocal = intersectClippedQuadric(e, d, quadrics[i].surface, quadrics[i].clipper);
 		if (tLocal < bestT && tLocal > 0.0)
@@ -114,6 +83,55 @@ bool findBestHit(vec4 e, vec4 d, out float bestT, out int bestIndex) {
 
 	return bestT > 0.0 && bestT < 10000.0;
 }
+
+// shading
+vec3 shadeDiffuse(
+	vec3 normal, vec3 lightDir,
+	vec3 powerDensity, vec3 materialColor) {
+
+	float cosa = clamp(dot(lightDir, normal), 0.0, 1.0);
+
+	return powerDensity * materialColor * cosa + powerDensity;
+}
+
+vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
+	vec3 outputColor = vec3(0.0, 0.0, 0.0);
+
+	// to handle both sides of surface, flip normal towards incoming ray
+	if ( dot(normal, d.xyz) > 0.0 ) normal = -normal;
+
+	// !! ensure i does not go out of lights range
+	for (int i = 0; i < NUM_LIGHTS; i++) {
+		vec3 lightDiff = lights[i].position.xyz - worldPosition.xyz * lights[i].position.w;
+		vec3 lightDir = normalize (lightDiff); // lights[i].position.xyz
+		float distanceSquared = dot(lightDiff, lightDiff);
+
+		// see if we're in shadow (so we don't need to do anything)
+		// check light source's visibility
+		vec4 e = vec4(worldPosition.xyz + normal * 0.001, 1);
+		vec4 d = vec4(normalize((lights[i].position - worldPosition).xyz), 0);
+
+		float bestShadowT = 10000.0;
+		int bestI = 0;
+		bool shadowRayHitSomething = findBestHit(e, d, bestShadowT, bestI);
+
+		if (shadowRayHitSomething && bestShadowT * lights[i].position.w <= sqrt( distanceSquared )) {
+			// we in shadow fr
+			continue;
+		}
+
+		// otherwise continue calculating contribution
+		if (lights[i].position.w < 1.0) {
+			distanceSquared = 1.0;
+		}
+		vec3 powerDensity = lights[i].powerDensity / distanceSquared; //lights[i].powerDensity
+
+		outputColor += shadeDiffuse(normal, lightDir, powerDensity, quadrics[qI].color);
+	}
+
+	return outputColor;
+}
+// end of shading
 
 void main(void) {
 	vec4 e = vec4(camera.position, 1);
@@ -146,7 +164,7 @@ void main(void) {
 		vec3 normal = normalize( (hit * A + A * hit).xyz );
 
 		// set fragment color to whatever you want
-		fragmentColor.rgb += shadeDiffuse(d, normal, hit, bestI) * w;
+		fragmentColor.rgb += shade(d, normal, hit, bestI) * w;
 
 		// compute reflected ray and update origin e and dir d
 		vec3 reflectedDir = reflect (d.xyz, normal);
