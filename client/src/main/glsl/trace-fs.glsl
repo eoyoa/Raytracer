@@ -23,7 +23,7 @@ uniform struct {
 	// reflectance for raytracing
 	float reflectance;
 } quadrics[16];
-const int NUM_QUADRICS = 8;
+const int NUM_QUADRICS = 2;
 
 uniform struct {
 	vec4 position;
@@ -97,9 +97,6 @@ vec3 shadeDiffuse(
 vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
 	vec3 outputColor = vec3(0.0, 0.0, 0.0);
 
-	// to handle both sides of surface, flip normal towards incoming ray
-	if ( dot(normal, d.xyz) > 0.0 ) normal = -normal;
-
 	// !! ensure i does not go out of lights range
 	for (int i = 0; i < NUM_LIGHTS; i++) {
 		vec3 lightDiff = lights[i].position.xyz - worldPosition.xyz * lights[i].position.w;
@@ -109,7 +106,7 @@ vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
 		// see if we're in shadow (so we don't need to do anything)
 		// check light source's visibility
 		vec4 e = vec4(worldPosition.xyz + normal * 0.001, 1);
-		vec4 d = vec4(normalize((lights[i].position - worldPosition).xyz), 0);
+		vec4 d = vec4(lightDir, 0);
 
 		float bestShadowT = 10000.0;
 		int bestI = 0;
@@ -140,7 +137,7 @@ void main(void) {
 	float w = 1.0;
 
 	// iterative ray tracing
-	for (int currBounce = 0; currBounce < 16 && w > 0.1; currBounce++) {
+	for (int currBounce = 0; currBounce < 16 && w > 0.01; currBounce++) {
 		// initialize best T and best index
 		float bestT = 10000.0;
 		int bestI = 0;
@@ -162,17 +159,17 @@ void main(void) {
 		// compute quadric normal
 		mat4 A = quadrics[bestI].surface;
 		vec3 normal = normalize( (hit * A + A * hit).xyz );
+		// don't forget to flip the normals
+		if (dot (normal, -d.xyz) < 0.0)
+		{
+			normal *= -1.0;
+		}
 
 		// set fragment color to whatever you want
 		fragmentColor.rgb += shade(d, normal, hit, bestI) * w;
 
 		// compute reflected ray and update origin e and dir d
 		vec3 reflectedDir = reflect (d.xyz, normal);
-		// don't forget to flip the normals
-		if (dot (normal, -d.xyz) < 0.0)
-		{
-			normal *= -1.0;
-		}
 		e = vec4 (hit.xyz + normal * 0.0001, 1.0);
 		d = vec4 (reflectedDir.xyz, 0.0);
 
