@@ -21,12 +21,14 @@ uniform struct {
 
 	// material properties per quadric
 	vec3 color;
+	vec3 secondColor;
 
 	// reflectance for raytracing
 	float reflectance;
 
 	// procedural solid texturing
 	float holeyness;
+	float mixFreq;
 } quadrics[16];
 const int NUM_QUADRICS = 16;
 
@@ -157,7 +159,19 @@ vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
 		}
 		vec3 powerDensity = lights[i].powerDensity / distanceSquared; //lights[i].powerDensity
 
-		outputColor += shadeDiffuse(normal, lightDir, powerDensity, quadrics[qI].color);
+		vec3 color = quadrics[qI].color;
+		// potentially mix color
+		if (quadrics[qI].mixFreq > 0.0) {
+			float w = fract( worldPosition.x * quadrics[qI].mixFreq
+			+ pow(
+				noise(worldPosition.xyz * 0.5),
+				2.0)
+			 * 3.0
+			);
+
+			color = mix( quadrics[qI].color, quadrics[qI].secondColor, w);
+		}
+		outputColor += shadeDiffuse(normal, lightDir, powerDensity, color);
 	}
 
 	return outputColor;
@@ -171,7 +185,7 @@ void main(void) {
 	float w = 1.0;
 
 	// iterative ray tracing
-	for (int currBounce = 0; currBounce < 4 && w > 0.01; currBounce++) {
+	for (int currBounce = 0; currBounce < 2 && w > 0.01; currBounce++) {
 		// initialize best T and best index
 		float bestT = 10000.0;
 		int bestI = 0;

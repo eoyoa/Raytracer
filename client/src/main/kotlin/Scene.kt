@@ -141,11 +141,28 @@ class Scene (
     }
   }
 
+  val floor = Quadric(fir.size + snowman.size)
+  init {
+    floor.apply {
+      surface.apply {
+        set(Quadric.unitSlab)
+        transform(
+          Mat4().translate(0f, -1f)
+        )
+      }
+      clipper.set(Quadric.unitSlab)
+      mixFreq.set(0.5f)
+      color.set(1f,0.647f,0.31f)
+      secondColor.set(0.545f,0.271f,0.075f)
+      translate(Vec3(0f, 1f))
+    }
+  }
+
   val lights = Array(1) { Light(it) }
   init {
     for (light in lights) {
       light.position.set(Vec4(1f, 0.5f, 1f, 0f))
-      light.powerDensity.set(1f,1f,1f).normalize().timesAssign(1f)
+      light.powerDensity.set(1f,1f,1f).normalize().timesAssign(0.75f)
     }
   }
 
@@ -172,7 +189,7 @@ class Scene (
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    traceMesh.draw(camera, *lights, *fir, *snowman)
+    traceMesh.draw(camera, *lights, *fir, *snowman, floor)
 
   }
 }

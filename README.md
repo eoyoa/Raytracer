@@ -4,3 +4,4 @@
 - Fir
 - Scissored
 - Snowman
+- Wooden floor
