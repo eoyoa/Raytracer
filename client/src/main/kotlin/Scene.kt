@@ -4,6 +4,7 @@ import org.khronos.webgl.Float32Array
 import vision.gears.webglmath.UniformProvider
 import vision.gears.webglmath.Vec3
 import vision.gears.webglmath.Mat4
+import vision.gears.webglmath.Vec4
 import kotlin.js.Date
 
 class Scene (
@@ -38,6 +39,21 @@ class Scene (
       quadrics[i].surface.transform(Mat4().set().scale(3.0f, 3.0f, 3.0f).translate(random))
       quadrics[i].clipper.set(Quadric.unitSlab)
       quadrics[i].clipper.transform(Mat4().set().scale(1.0f, 0.5f, 1.0f))
+
+      // todo: just testing color
+      quadrics[i].color.set(0.3f, 0.6f, 1f)
+    }
+  }
+
+  val lights = Array(3) { Light(it) }
+  init {
+    for (light in lights) {
+      val random = Vec3()
+      random.randomize(Vec3(-9.0f, -9.0f, -9.0f), Vec3 (9.0f, 9.0f, 9.0f))
+      light.position.set(Vec4(random, 1f))
+      random.randomize(Vec3(10f, 10f, 10f), Vec3(100f, 100f, 100f))
+      light.powerDensity.set(random)
+
     }
   }
 
@@ -65,7 +81,7 @@ class Scene (
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    traceMesh.draw(camera, *quadrics)
+    traceMesh.draw(camera, *quadrics, *lights)
 
   }
 }

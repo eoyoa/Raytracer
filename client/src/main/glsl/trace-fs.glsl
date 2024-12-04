@@ -16,7 +16,48 @@ uniform struct {
 uniform struct {
   mat4 surface;
   mat4 clipper;
+
+	// material properties per quadric
+	vec3 color;
 } quadrics[16];
+
+// shading
+uniform struct {
+	vec4 position;
+	vec3 powerDensity;
+} lights[8];
+
+vec3 doShade(
+	vec3 normal, vec3 lightDir,
+	vec3 powerDensity, vec3 materialColor) {
+
+	float cosa = clamp(dot(lightDir, normal), 0.0, 1.0);
+
+	return powerDensity * materialColor * cosa + powerDensity;
+}
+
+vec3 shadeDiffuse(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
+	vec3 outputColor = vec3(0.0, 0.0, 0.0);
+
+	// to handle both sides of surface, flip normal towards incoming ray
+	if ( dot(normal, d.xyz) > 0.0 ) normal = -normal;
+
+	// !! ensure i does not go out of lights range
+	for (int i = 0; i < 3; i++) {
+		vec3 lightDiff = lights[i].position.xyz - worldPosition.xyz * lights[i].position.w;
+		vec3 lightDir = normalize (lightDiff); // lights[i].position.xyz
+		float distanceSquared = dot(lightDiff, lightDiff);
+		if (lights[i].position.w < 1.0) {
+			distanceSquared = 1.0;
+		}
+		vec3 powerDensity = lights[i].powerDensity / distanceSquared; //lights[i].powerDensity
+
+		outputColor += doShade(normal, lightDir, powerDensity, quadrics[qI].color);
+	}
+
+	return outputColor;
+}
+// end of shading
 
 float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
 
@@ -98,7 +139,10 @@ void main(void) {
 
 	// set fragment color to whatever you want
 	// todo: proper shading
-	fragmentColor = vec4(normal, 1.0);
+	fragmentColor.rgb = shadeDiffuse(d, normal, hit, bestI);
+
+	// set fragment color w so it's a proper output
+	fragmentColor.w = 1.0;
 
 //	while (validHit && killer >0)
 //	{
