@@ -19,6 +19,9 @@ uniform struct {
 
 	// material properties per quadric
 	vec3 color;
+
+	// reflectance for raytracing
+	float reflectance;
 } quadrics[16];
 
 // shading
@@ -60,7 +63,6 @@ vec3 shadeDiffuse(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
 // end of shading
 
 float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
-
 	float a = dot(d * A, d);
 	float b = dot(d * A, e) + dot(e * A, d);
 	float c = dot(e * A, e);
@@ -117,60 +119,49 @@ void main(void) {
 	vec4 e = vec4(camera.position, 1);
 	vec4 d = vec4(normalize(rayDir.xyz), 0);
 
-	// initialize best T and best index
-	float bestT = 10000.0;
-	int bestI = 0;
+	float w = 1.0;
 
-	bool hitSomething = findBestHit(e, d, bestT, bestI);
+	// iterative ray tracing
+	for (int currBounce = 0; currBounce < 16 && w > 0.1; currBounce++) {
+		// initialize best T and best index
+		float bestT = 10000.0;
+		int bestI = 0;
 
-	if (!hitSomething) {
-		// basically didn't hit anything, so draw the background
-		fragmentColor = texture (material.envTexture, d.xyz);
-		return;
+		// find best hit
+		bool hitSomething = findBestHit(e, d, bestT, bestI);
+
+		if (!hitSomething) {
+			// didn't hit anything
+			fragmentColor += texture (material.envTexture, d.xyz) * w;
+			w = 0.0;
+			continue;
+		}
+
+		// compute intersection point
+		float t = bestT;
+		vec4 hit = e + d * t;
+
+		// compute quadric normal
+		mat4 A = quadrics[bestI].surface;
+		vec3 normal = normalize( (hit * A + A * hit).xyz );
+
+		// set fragment color to whatever you want
+		fragmentColor.rgb += shadeDiffuse(d, normal, hit, bestI) * w;
+
+		// compute reflected ray and update origin e and dir d
+		vec3 reflectedDir = reflect (d.xyz, normal);
+		// don't forget to flip the normals
+		if (dot (normal, -d.xyz) < 0.0)
+		{
+			normal *= -1.0;
+		}
+		e = vec4 (hit.xyz + normal * 0.0001, 1.0);
+		d = vec4 (reflectedDir.xyz, 0.0);
+
+		// accumulate reflectance
+		w *= quadrics[bestI].reflectance;
 	}
-
-	// compute intersection point
-	float t = bestT;
-	vec4 hit = e + d * t;
-
-	// compute quadric normal
-	mat4 A = quadrics[bestI].surface;
-	vec3 normal = normalize( (hit * A + A * hit).xyz );
-
-	// set fragment color to whatever you want
-	// todo: proper shading
-	fragmentColor.rgb = shadeDiffuse(d, normal, hit, bestI);
 
 	// set fragment color w so it's a proper output
 	fragmentColor.w = 1.0;
-
-//	while (validHit && killer >0)
-//	{
-//		killer--;
-//		bool isValidHit = findBestHit(e, d, bestT, bestI);
-//
-//		if (isValidHit) {
-//			float t = bestT;
-//			mat4 A = quadrics[bestI].surface;
-//			vec4 hit = e + d * t;
-//			vec3 normal = normalize( (hit * A + A * hit).xyz );
-//			vec3 reflectedDir = reflect (d.xyz, normal);
-//
-//			if (dot (normal, -d.xyz) < 0.0)
-//			{
-//				normal *= -1.0;
-//			}
-//
-//			e = vec4 (hit.xyz + normal * 0.0001, 1.0);
-//			d = vec4 (reflectedDir.xyz, 0.0);
-//
-//			bestT = 10000.0;
-//		}
-//		else
-//		{
-//			validHit = false;
-//		}
-//	}
-//
-//	fragmentColor = texture (material.envTexture, d.xyz);
 }

@@ -29,7 +29,7 @@ class Scene (
   val timeAtFirstFrame = Date().getTime()
   var timeAtLastFrame =  timeAtFirstFrame
 
-  val quadrics = Array<Quadric>(16) { Quadric(it) }
+  val quadrics = Array(16) { Quadric(it) }
 
   init{
     for (i in 0..15) {
@@ -42,6 +42,9 @@ class Scene (
 
       // todo: just testing color
       quadrics[i].color.set(0.3f, 0.6f, 1f)
+
+      // todo: testing reflectance
+//      quadrics[i].reflectance.set(1.0f)
     }
   }
 
@@ -51,8 +54,7 @@ class Scene (
       val random = Vec3()
       random.randomize(Vec3(-9.0f, -9.0f, -9.0f), Vec3 (9.0f, 9.0f, 9.0f))
       light.position.set(Vec4(random, 1f))
-      random.randomize(Vec3(10f, 10f, 10f), Vec3(100f, 100f, 100f))
-      light.powerDensity.set(random)
+      light.powerDensity.set(5f, 5f, 5f)
 
     }
   }
