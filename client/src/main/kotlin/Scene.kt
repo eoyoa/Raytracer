@@ -184,12 +184,13 @@ class Scene (
     oranges[3].translate(Vec3(-0.25f, 0f, 0.25f))
   }
 
-  val lights = Array(1) { Light(it) }
+  val lights = Array(2) { Light(it) }
   init {
-    for (light in lights) {
-      light.position.set(Vec4(1f, 0.5f, 1f, 0f))
-      light.powerDensity.set(1f,1f,1f).normalize().timesAssign(0.75f)
-    }
+    lights[0].position.set(Vec4(1f, 0.5f, 1f, 0f))
+    lights[0].powerDensity.set(1f,1f,1f).normalize().timesAssign(0.75f)
+
+    lights[1].position.set(Vec4(0f, 3f, 0f, 1f))
+    lights[1].powerDensity.set(0.933f,0.776f,0.122f).normalize().timesAssign(2f)
   }
 
   init{

@@ -37,7 +37,7 @@ uniform struct {
 	vec4 position;
 	vec3 powerDensity;
 } lights[8];
-const int NUM_LIGHTS = 1;
+const int NUM_LIGHTS = 2;
 
 // procedural texturing
 float noise(vec3 r) {
