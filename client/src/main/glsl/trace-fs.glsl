@@ -76,12 +76,14 @@ void main(void) {
 	vec4 e = vec4(camera.position, 1);
 	vec4 d = vec4(normalize(rayDir.xyz), 0);
 
+	// initialize best T and best index
 	float bestT = 10000.0;
 	int bestI = 0;
 
 	bool hitSomething = findBestHit(e, d, bestT, bestI);
 
 	if (!hitSomething) {
+		// basically didn't hit anything, so draw the background
 		fragmentColor = texture (material.envTexture, d.xyz);
 		return;
 	}
