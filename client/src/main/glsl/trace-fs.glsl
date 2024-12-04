@@ -76,13 +76,8 @@ void main(void) {
 	vec4 e = vec4(camera.position, 1);
 	vec4 d = vec4(normalize(rayDir.xyz), 0);
 
-	// find best hit or return false if no best hit
-	bool validHit = true;
-//	int killer = 16;
-
 	float bestT = 10000.0;
 	int bestI = 0;
-
 
 	bool hitSomething = findBestHit(e, d, bestT, bestI);
 
