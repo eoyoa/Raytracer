@@ -3,3 +3,4 @@
 - Shadows
 - Fir
 - Scissored
+- Snowman

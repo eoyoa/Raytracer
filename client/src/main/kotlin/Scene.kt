@@ -6,6 +6,7 @@ import vision.gears.webglmath.Vec3
 import vision.gears.webglmath.Mat4
 import vision.gears.webglmath.Vec4
 import kotlin.js.Date
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -37,14 +38,14 @@ class Scene (
     fir[0].apply {
       surface.apply {
         set(Quadric.cone)
+        transform(
+          Mat4()
+            .translate(0f, 1f)
+        )
       }
 
       clipper.apply {
         set(Quadric.unitSlab)
-        transform(
-          Mat4()
-            .translate(0f, -1f)
-        )
         negate()
       }
 
@@ -58,14 +59,14 @@ class Scene (
     fir[1].apply {
       surface.apply {
         set(Quadric.cone)
+        transform(
+          Mat4()
+            .translate(0f, 1f)
+        )
       }
 
       clipper.apply {
         set(Quadric.unitSlab)
-        transform(
-          Mat4()
-            .translate(0f, -1f)
-        )
         negate()
       }
 
@@ -79,10 +80,71 @@ class Scene (
     }
   }
 
+  val snowman = Array(4) { Quadric(it + fir.size) }
+  init {
+    snowman[0].apply {
+      surface.set(Quadric.unitSphere)
+      clipper.apply {
+        set(Quadric.plane)
+        transform(
+          Mat4().translate(0f, -2f)
+        )
+      }
+    }
+    snowman[1].apply {
+      surface.set(Quadric.unitSphere)
+      clipper.apply {
+        set(Quadric.plane)
+        transform(
+          Mat4().translate(0f, -2f)
+        )
+      }
+      scale(0.75f)
+      translate(Vec3(0f, 1f))
+    }
+    snowman[2].apply {
+      surface.set(Quadric.unitSphere)
+      clipper.apply {
+        set(Quadric.plane)
+        transform(
+          Mat4().translate(0f, -2f)
+        )
+      }
+      scale(0.75f * 0.75f)
+      translate(Vec3(0f, 2f))
+    }
+    snowman[3].apply {
+      // nose
+      surface.apply {
+        set(Quadric.cone)
+        transform(
+          Mat4()
+            .scale(0.25f, 1f, 0.25f)
+            .translate(0f, 1f)
+        )
+      }
+      clipper.apply {
+        set(Quadric.unitSlab)
+        negate()
+      }
+      rotate(-PI.toFloat() / 2, Vec3(0f, 0f, 1f).normalize())
+      scale(0.25f)
+      translate(Vec3(0.75f, 2.1f))
+
+      color.set(1f,0.647f,0f)
+      reflectance.set(0.09f)
+    }
+
+    val snowmanPos = Vec3(3f )
+    for (quadric in snowman) {
+      quadric.translate(snowmanPos)
+    }
+  }
+
   val lights = Array(1) { Light(it) }
   init {
     for (light in lights) {
-      light.position.set(Vec4(0.5f, 0.5f, 0.5f, 0f))
+      light.position.set(Vec4(1f, 0.5f, 1f, 0f))
       light.powerDensity.set(1f,1f,1f).normalize().timesAssign(1f)
     }
   }
@@ -103,8 +165,6 @@ class Scene (
     val t  = (timeAtThisFrame - timeAtFirstFrame).toFloat() / 1000.0f    
     timeAtLastFrame = timeAtThisFrame
 
-    lights[0].position.set(1f, -0.5f, 0f, 0f)
-
     camera.move(dt, keysPressed)
 
     // clear the screen
@@ -112,7 +172,7 @@ class Scene (
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    traceMesh.draw(camera, *fir, *lights)
+    traceMesh.draw(camera, *lights, *fir, *snowman)
 
   }
 }

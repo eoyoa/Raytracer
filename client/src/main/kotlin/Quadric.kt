@@ -16,6 +16,18 @@ class Quadric(i : Int) : UniformProvider("""quadrics[${i}]""") {
     clipper.transform(translation)
   }
 
+  fun scale(scalar: Float) {
+    val scaling = Mat4().scale(scalar, scalar, scalar)
+    surface.transform(scaling)
+    clipper.transform(scaling)
+  }
+
+  fun rotate(angle: Float, axis: Vec3) {
+    val rotation = Mat4().rotate(angle, axis)
+    surface.transform(rotation)
+    clipper.transform(rotation)
+  }
+
   companion object {
     val unitSphere = 
       Mat4(
