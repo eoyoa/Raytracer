@@ -12,6 +12,10 @@ class QuadraticMat4(val m : Mat4 = Mat4()) : UniformFloat by m {
   		trafo.clone().invert().transpose() ) 
   }
 
+    fun negate() {
+        m.timesAssign(-1f)
+    }
+
   operator fun provideDelegate(
       provider: UniformProvider,
       property: KProperty<*>) : QuadraticMat4{

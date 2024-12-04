@@ -9,6 +9,12 @@ class Quadric(i : Int) : UniformProvider("""quadrics[${i}]""") {
   val color by Vec3(0.5f, 0.5f, 0.5f)
   var reflectance by Vec1(0.18f)
 
+  fun translate(position: Vec3) {
+    val translation = Mat4().translate(position)
+    surface.transform(translation)
+    clipper.transform(translation)
+  }
+
   companion object {
     val unitSphere = 
       Mat4(
@@ -30,7 +36,14 @@ class Quadric(i : Int) : UniformProvider("""quadrics[${i}]""") {
         0.0f, 0.0f, 0.0f, 1.0f,
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, -0.0f
-      )            
+      )
+    val cone =
+      Mat4(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, -1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f
+      )
   }
 
 }
