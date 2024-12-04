@@ -18,7 +18,7 @@ uniform struct {
   mat4 clipper;
 } quadrics[16];
 
-float intersectQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
+float intersectClippedQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
 
 	float a = dot(d * A, d);
 	float b = dot(d * A, e) + dot(e * A, d);
@@ -77,7 +77,7 @@ void main(void) {
 		killer--;
 		for (int i = 0; i < 16; i++)
 		{
-			float tLocal = intersectQuadric (e, d, quadrics[i].surface, quadrics[i].clipper);
+			float tLocal = intersectClippedQuadric(e, d, quadrics[i].surface, quadrics[i].clipper);
 			if (tLocal < bestT && tLocal > 0.0)
 			{
 				bestT = tLocal;
