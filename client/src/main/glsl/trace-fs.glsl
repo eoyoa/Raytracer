@@ -78,38 +78,58 @@ void main(void) {
 
 	// find best hit or return false if no best hit
 	bool validHit = true;
-	int killer = 16;
+//	int killer = 16;
 
 	float bestT = 10000.0;
 	int bestI = 0;
 
-	while (validHit && killer >0)
-	{
-		killer--;
-		bool isValidHit = findBestHit(e, d, bestT, bestI);
 
-		if (isValidHit) {
-			float t = bestT;
-			mat4 A = quadrics[bestI].surface;
-			vec4 hit = e + d * t;
-			vec3 normal = normalize( (hit * A + A * hit).xyz );
-			vec3 reflectedDir = reflect (d.xyz, normal);
+	bool hitSomething = findBestHit(e, d, bestT, bestI);
 
-			if (dot (normal, -d.xyz) < 0.0)
-			{
-				normal *= -1.0;
-			}
-
-			e = vec4 (hit.xyz + normal * 0.0001, 1.0);
-			d = vec4 (reflectedDir.xyz, 0.0);
-
-			bestT = 10000.0;
-		}
-		else
-		{
-			validHit = false;
-		}
+	if (!hitSomething) {
+		fragmentColor = texture (material.envTexture, d.xyz);
+		return;
 	}
 
-	fragmentColor = texture (material.envTexture, d.xyz);
+	// compute intersection point
+	float t = bestT;
+	vec4 hit = e + d * t;
+
+	// compute quadric normal
+	mat4 A = quadrics[bestI].surface;
+	vec3 normal = normalize( (hit * A + A * hit).xyz );
+
+	// set fragment color to whatever you want
+	// todo: proper shading
+	fragmentColor = vec4(normal, 1.0);
+
+//	while (validHit && killer >0)
+//	{
+//		killer--;
+//		bool isValidHit = findBestHit(e, d, bestT, bestI);
+//
+//		if (isValidHit) {
+//			float t = bestT;
+//			mat4 A = quadrics[bestI].surface;
+//			vec4 hit = e + d * t;
+//			vec3 normal = normalize( (hit * A + A * hit).xyz );
+//			vec3 reflectedDir = reflect (d.xyz, normal);
+//
+//			if (dot (normal, -d.xyz) < 0.0)
+//			{
+//				normal *= -1.0;
+//			}
+//
+//			e = vec4 (hit.xyz + normal * 0.0001, 1.0);
+//			d = vec4 (reflectedDir.xyz, 0.0);
+//
+//			bestT = 10000.0;
+//		}
+//		else
+//		{
+//			validHit = false;
+//		}
+//	}
+//
+//	fragmentColor = texture (material.envTexture, d.xyz);
 }
