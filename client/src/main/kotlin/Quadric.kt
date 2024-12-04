@@ -14,6 +14,7 @@ class Quadric(i : Int) : UniformProvider("""quadrics[${i}]""") {
 
   val holeyness by Vec1(0f)
   val mixFreq by Vec1(0f)
+  val normalBumpFreq by Vec1(0.0f)
 
   fun translate(position: Vec3) {
     val translation = Mat4().translate(position)

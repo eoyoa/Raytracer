@@ -158,6 +158,31 @@ class Scene (
     }
   }
 
+  val oranges = Array(4) { Quadric(it + 1 + snowman.size + fir.size) }
+  init {
+    for (orange in oranges) {
+      orange.apply {
+        surface.set(Quadric.unitSphere)
+        clipper.apply {
+          set(Quadric.plane)
+          transform(
+            Mat4()
+              .translate(0f, -2f)
+          )
+        }
+        scale(0.25f)
+        color.set(1f,0.647f,0f)
+        reflectance.set(0.09f)
+        normalBumpFreq.set(0.1f)
+        translate(Vec3(3f, 0f, 3f))
+      }
+    }
+    oranges[0].translate(Vec3(0f, 0.25f))
+    oranges[1].translate(Vec3(0f, 0f, 0.25f))
+    oranges[2].translate(Vec3(0.25f))
+    oranges[3].translate(Vec3(-0.25f, 0f, 0.25f))
+  }
+
   val lights = Array(1) { Light(it) }
   init {
     for (light in lights) {
@@ -189,7 +214,7 @@ class Scene (
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    traceMesh.draw(camera, *lights, *fir, *snowman, floor)
+    traceMesh.draw(camera, *lights, *fir, *snowman, floor, *oranges)
 
   }
 }

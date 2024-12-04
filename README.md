@@ -5,3 +5,4 @@
 - Scissored
 - Snowman
 - Wooden floor
+- Pile of oranges
