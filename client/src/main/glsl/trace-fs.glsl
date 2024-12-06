@@ -144,7 +144,7 @@ vec3 shadeDiffuse(
 
 	float cosa = clamp(dot(lightDir, normal), 0.0, 1.0);
 
-	return powerDensity * materialColor * cosa + powerDensity;
+	return powerDensity * materialColor * cosa;
 }
 
 vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
