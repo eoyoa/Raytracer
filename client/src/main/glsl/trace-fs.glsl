@@ -42,7 +42,8 @@ const int NUM_LIGHTS = 2;
 uniform struct {
 	float randf1;
 	float randf2;
-} uniformRandom;
+} uniformRandoms[300];
+const int NUM_SAMPLES = 300;
 
 // procedural texturing
 float noise(vec3 r) {
@@ -201,11 +202,18 @@ vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
 // end of shading
 
 // path tracing
+float pi = radians(180.0);
 vec3 UniformSampleHemisphere(float u1, float u2) {
-	float pi = radians(180.0);
 	float z = u1;
 	float r = sqrt(max(0.0, 1.0 - z * z));
 	float phi = 2.0 * pi * u2;
+	return vec3(r * cos(phi), r * sin(phi), z);
+}
+
+vec3 UniformSampleSphere(float u1, float u2) {
+	float z = 1. - 2. * u1;
+	float r = sqrt(max(0., 1. - z * z));
+	float phi = 2. * pi * u2;
 	return vec3(r * cos(phi), r * sin(phi), z);
 }
 
@@ -215,52 +223,61 @@ void main(void) {
 
 	float w = 1.0;
 
-	// iterative ray tracing
-	for (int currBounce = 0; currBounce < 2 && w > 0.01; currBounce++) {
-		// initialize best T and best index
-		float bestT = 10000.0;
-		int bestI = 0;
+	vec4 preAveragedColor = vec4(0., 0., 0., 0.);
 
-		// find best hit
-		bool hitSomething = findBestHit(e, d, bestT, bestI);
+	// path tracing: continuously sample
+	for (int currSample = 0; currSample < NUM_SAMPLES; currSample++) {
+		// iterative ray tracing
+		for (int currBounce = 0; currBounce < 8 && w > 0.001; currBounce++) {
+			// initialize best T and best index
+			float bestT = 10000.0;
+			int bestI = 0;
 
-		if (!hitSomething) {
-			// didn't hit anything
-			fragmentColor += texture (material.envTexture, d.xyz) * w;
-			w = 0.0;
-			continue;
+			// find best hit
+			bool hitSomething = findBestHit(e, d, bestT, bestI);
+
+			if (!hitSomething) {
+				// didn't hit anything
+				preAveragedColor += texture (material.envTexture, d.xyz) * w;
+				w = 0.0;
+				continue;
+			}
+
+			// compute intersection point
+			float t = bestT;
+			vec4 hit = e + d * t;
+
+			// compute quadric normal
+			mat4 A = quadrics[bestI].surface;
+			vec3 normal = normalize( (hit * A + A * hit).xyz );
+			if (quadrics[bestI].normalBumpFreq > 0.0) {
+				normal = normalize(1.5 * noiseGrad(0.05 * hit.xyz) + normal);
+			}
+			// don't forget to flip the normals
+			if (dot (normal, -d.xyz) < 0.0)
+			{
+				normal *= -1.0;
+			}
+
+			// set fragment color to whatever you want
+			preAveragedColor.rgb += shade(d, normal, hit, bestI) * w;
+
+			// compute reflected ray and update origin e and dir d
+			vec3 randDir = UniformSampleSphere(uniformRandoms[currSample].randf1, uniformRandoms[currSample].randf2);
+			vec3 reflectedDir = normalize(normal + randDir);
+			//		vec3 reflectedDir = reflect (d.xyz, normal);
+			e = vec4 (hit.xyz + normal * 0.0001, 1.0);
+			d = vec4 (reflectedDir.xyz, 0.0);
+
+			// accumulate reflectance
+			// todo: diffuse color reflectance instead of ideal float
+			w *= quadrics[bestI].reflectance;
 		}
-
-		// compute intersection point
-		float t = bestT;
-		vec4 hit = e + d * t;
-
-		// compute quadric normal
-		mat4 A = quadrics[bestI].surface;
-		vec3 normal = normalize( (hit * A + A * hit).xyz );
-		if (quadrics[bestI].normalBumpFreq > 0.0) {
-			normal = normalize(1.5 * noiseGrad(0.05 * hit.xyz) + normal);
-		}
-		// don't forget to flip the normals
-		if (dot (normal, -d.xyz) < 0.0)
-		{
-			normal *= -1.0;
-		}
-
-		// set fragment color to whatever you want
-		fragmentColor.rgb += shade(d, normal, hit, bestI) * w;
-
-		// compute reflected ray and update origin e and dir d
-		vec3 randDir = UniformSampleHemisphere(uniformRandom.randf1, uniformRandom.randf2);
-		vec3 reflectedDir = normalize(normal + randDir);
-//		vec3 reflectedDir = reflect (d.xyz, normal);
-		e = vec4 (hit.xyz + normal * 0.0001, 1.0);
-		d = vec4 (reflectedDir.xyz, 0.0);
-
-		// accumulate reflectance
-		// todo: diffuse color reflectance instead of ideal float
-		w *= quadrics[bestI].reflectance;
+		fragmentColor.rgb += preAveragedColor.rgb;
 	}
+
+	// path tracing: average out sampled colors
+	fragmentColor.rgb /= float(NUM_SAMPLES);
 
 	// set fragment color w so it's a proper output
 	fragmentColor.w = 1.0;

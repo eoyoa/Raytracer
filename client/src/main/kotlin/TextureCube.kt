@@ -9,9 +9,10 @@ class TextureCube(
   vararg mediaFileUrls : String
   ) : Texture {
   override val glTexture : WebGLTexture? = gl.createTexture()
+  var loaded = false
   init {
     val images = Array<Image>(6) { Image() }
-    var loadedCount = 0    
+    var loadedCount = 0
     for(i in 0 until 6) {
       images[i].onload = {
         gl.bindTexture(GL.TEXTURE_CUBE_MAP, glTexture)
@@ -19,7 +20,8 @@ class TextureCube(
         if(++loadedCount == 6) {
           gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, GL.LINEAR) 
           gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR) 
-          gl.generateMipmap(GL.TEXTURE_CUBE_MAP); 
+          gl.generateMipmap(GL.TEXTURE_CUBE_MAP);
+          loaded = true
         }
         gl.bindTexture(GL.TEXTURE_CUBE_MAP, null); 
       }

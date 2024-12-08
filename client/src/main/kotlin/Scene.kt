@@ -29,6 +29,9 @@ class Scene (
   val traceMesh = Mesh(traceMaterial, quadGeometry)
 
   val camera = PerspectiveCamera()
+  init {
+    camera.position.set(0.5f, 0.5f, 7.5f)
+  }
 
   val timeAtFirstFrame = Date().getTime()
   var timeAtLastFrame =  timeAtFirstFrame
@@ -198,42 +201,50 @@ class Scene (
     addComponentsAndGatherUniforms(*Program.all)
   }
 
-  val random = UniformRandom()
-  init {
-    random.randomize()
-  }
+  val randoms = Array(300) { UniformRandom(it) }
 
   fun resize(gl : WebGL2RenderingContext, canvas : HTMLCanvasElement) {
     gl.viewport(0, 0, canvas.width, canvas.height)
     camera.setAspectRatio(canvas.width.toFloat() / canvas.height.toFloat())
   }
 
+  var shouldRender = true
+
   fun update(gl : WebGL2RenderingContext, keysPressed : Set<String>) {
+    if (!shouldRender) return
+
     val timeAtThisFrame = Date().getTime() 
     val dt = (timeAtThisFrame - timeAtLastFrame).toFloat() / 1000.0f
     val t  = (timeAtThisFrame - timeAtFirstFrame).toFloat() / 1000.0f    
     timeAtLastFrame = timeAtThisFrame
 
+    if (skyCubeTexture.loaded) shouldRender = false
+    else return
+
     camera.move(dt, keysPressed)
     // animations
-    for (firPart in fir) {
-      firPart.rotate(dt, Vec3(-0.01f, 1f, 0.01f).normalize())
-    }
-    for (snowmanPart in snowman) {
-      snowmanPart.translate(Vec3(0f, 0.0125f * sin(2*t)))
-    }
-    for (i in oranges.indices) {
-      oranges[i].translate(Vec3(0.0025f * sin((i + 1)*t), 0f, 0.0025f * cos((i + 1)*t)))
-    }
+//    for (firPart in fir) {
+//      firPart.rotate(dt, Vec3(-0.01f, 1f, 0.01f).normalize())
+//    }
+//    for (snowmanPart in snowman) {
+//      snowmanPart.translate(Vec3(0f, 0.0125f * sin(2*t)))
+//    }
+//    for (i in oranges.indices) {
+//      oranges[i].translate(Vec3(0.0025f * sin((i + 1)*t), 0f, 0.0025f * cos((i + 1)*t)))
+//    }
 
     // clear the screen
     gl.clearColor(0.3f, 0.0f, 0.3f, 1.0f)
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    random.randomize()
+    for (random in randoms) {
+      random.randomize()
+      console.log("random ${random.id}: ${random.randf1.x} ${random.randf2.x}")
+    }
 
-    traceMesh.draw(camera, *lights, *fir, *snowman, floor, *oranges, random)
+
+    traceMesh.draw(camera, *lights, *fir, *snowman, floor, *oranges, *randoms)
 
   }
 }
