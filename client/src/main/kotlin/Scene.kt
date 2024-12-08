@@ -198,6 +198,11 @@ class Scene (
     addComponentsAndGatherUniforms(*Program.all)
   }
 
+  val random = UniformRandom()
+  init {
+    random.randomize()
+  }
+
   fun resize(gl : WebGL2RenderingContext, canvas : HTMLCanvasElement) {
     gl.viewport(0, 0, canvas.width, canvas.height)
     camera.setAspectRatio(canvas.width.toFloat() / canvas.height.toFloat())
@@ -226,7 +231,9 @@ class Scene (
     gl.clearDepth(1.0f)
     gl.clear(GL.COLOR_BUFFER_BIT or GL.DEPTH_BUFFER_BIT)
 
-    traceMesh.draw(camera, *lights, *fir, *snowman, floor, *oranges)
+    random.randomize()
+
+    traceMesh.draw(camera, *lights, *fir, *snowman, floor, *oranges, random)
 
   }
 }

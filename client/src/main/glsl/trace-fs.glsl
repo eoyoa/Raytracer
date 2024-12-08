@@ -39,6 +39,11 @@ uniform struct {
 } lights[8];
 const int NUM_LIGHTS = 2;
 
+uniform struct {
+	float randf1;
+	float randf2;
+} uniformRandom;
+
 // procedural texturing
 float noise(vec3 r) {
 	uvec3 s = uvec3(
@@ -195,6 +200,15 @@ vec3 shade(vec4 d, vec3 normal, vec4 worldPosition, int qI) {
 }
 // end of shading
 
+// path tracing
+vec3 UniformSampleHemisphere(float u1, float u2) {
+	float pi = radians(180.0);
+	float z = u1;
+	float r = sqrt(max(0.0, 1.0 - z * z));
+	float phi = 2.0 * pi * u2;
+	return vec3(r * cos(phi), r * sin(phi), z);
+}
+
 void main(void) {
 	vec4 e = vec4(camera.position, 1);
 	vec4 d = vec4(normalize(rayDir.xyz), 0);
@@ -237,11 +251,14 @@ void main(void) {
 		fragmentColor.rgb += shade(d, normal, hit, bestI) * w;
 
 		// compute reflected ray and update origin e and dir d
-		vec3 reflectedDir = reflect (d.xyz, normal);
+		vec3 randDir = UniformSampleHemisphere(uniformRandom.randf1, uniformRandom.randf2);
+		vec3 reflectedDir = normalize(normal + randDir);
+//		vec3 reflectedDir = reflect (d.xyz, normal);
 		e = vec4 (hit.xyz + normal * 0.0001, 1.0);
 		d = vec4 (reflectedDir.xyz, 0.0);
 
 		// accumulate reflectance
+		// todo: diffuse color reflectance instead of ideal float
 		w *= quadrics[bestI].reflectance;
 	}
 
